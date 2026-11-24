@@ -105,6 +105,8 @@ assert.equal(card.content.imageUrl, 'https://msgnote.kr/card.jpg');
 assert.equal(card.content.link.mobileWebUrl, 'https://msgnote.kr/couple-a/simple');
 assert.equal(card.buttons[0].link.webUrl, card.content.link.webUrl);
 
+const projection = await import('../src/server/invitationMediaProjection');
+let projectionOptions = { pilotSlug: '', bucketName: 'test-bucket' };
 const routePath = 'src/app/mobile-share/[slug]/[theme]/page.tsx';
 assert.ok(existsSync(routePath), '앱은 공개 정보만 사용하는 카카오 공유 화면을 열어야 합니다.');
 const routeExports: Record<string, (...args: unknown[]) => Promise<unknown>> = {};
@@ -119,6 +121,10 @@ runInNewContext(routeSource, { exports: routeExports, Date, Promise,
     if (name === 'next/navigation') return { notFound: () => { throw new Error('NOT_FOUND'); } };
     if (name === 'react/jsx-runtime') return { jsx: (type: unknown, props: unknown) => ({ type, props }), jsxs: (type: unknown, props: unknown) => ({ type, props }) };
     if (name.includes('invitationPageServerService')) return { getServerInvitationPageBySlug: async (_slug: string, options: unknown) => { lookupOptions = options; pageReads++; return routePage; } };
+    if (name.includes('invitationMediaProjection')) return {
+      projectPilotPublicInvitationMedia: (value: Parameters<typeof projection.projectPilotPublicInvitationMedia>[0], slug: string) =>
+        projection.projectPilotPublicInvitationMedia(value, slug, projectionOptions),
+    };
     if (name.includes('invitationMetadata')) return { PUBLIC_SITE_ORIGIN: 'https://invite.msgnote.kr' };
     if (name.includes('eventPreviewLinks')) return { isWeddingPreviewThemeKey: (theme: string) => themes.includes(theme) };
     if (name.includes('invitationThemes')) return { getInvitationThemeLabel: () => '기본형' };
@@ -149,6 +155,15 @@ for (const currentOrigin of ['https://msgnote.kr', 'http://localhost:3001']) {
   ], currentOrigin), [`${currentOrigin}/card.jpg`, `${currentOrigin}/social.jpg`]);
 }
 assert.equal(JSON.stringify(lookupOptions), JSON.stringify({ includePrivate: false, sampleFallbackMode: 'never' }));
+projectionOptions = { pilotSlug: page.slug, bucketName: 'test-bucket' };
+const legacyCard = 'https://firebasestorage.googleapis.com/v0/b/test-bucket/o/wedding-images%2Fcouple-a%2Fcard.jpg?alt=media&token=fixture-only';
+routePage = { ...routePage, metadata: { ...routePage.metadata, images: { ...routePage.metadata.images, kakaoCard: legacyCard } } };
+const pilotTree = await renderShareRoute() as typeof routeTree;
+const pilotShare = pilotTree.props.children.find(child => child?.props?.shareMode === 'card');
+assert.equal(pilotShare?.props.imageUrl, '/api/public/media/couple-a/card.jpg/');
+assert.ok(!JSON.stringify(pilotTree).includes('fixture-only'), 'Public share route must not expose the old token on the pilot.');
+assert.equal(routePage.metadata.images.kakaoCard, legacyCard, 'Do not mutate the editor source.');
+projectionOptions = { pilotSlug: '', bucketName: 'test-bucket' };
 routePage = { ...routePage, published: false };
 await assert.rejects(renderShareRoute(), /NOT_FOUND/);
 routePage = { ...routePage, published: true, displayPeriodEnabled: true, displayPeriodEnd: new Date(0) };
