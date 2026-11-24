@@ -22,6 +22,14 @@ const blockerLabels: Record<string, string> = {
   'live-compatibility-and-revocation-approval-required': '실제 환경 검증 및 폐기 승인 필요',
 };
 
+const rehearsalReasonLabels: Record<string, string> = {
+  'inventory-blocked': '누락·미호환 파일 또는 추억 페이지 등 선행 점검 필요',
+  'snapshot-version-mismatch': '저장 내용과 이벤트 버전 불일치',
+  'unsupported-snapshot': '지원 대상 저장 구조 아님',
+  'temporary-image-reference': '저장된 임시 이미지 주소 발견',
+  'roundtrip-mismatch': '원본 복원 검증 불일치',
+};
+
 export default function MediaAccessAudit({ slug, disabled }: { slug: string; disabled: boolean }) {
   const [result, setResult] = useState<MediaAccessAuditResult | null>(null);
   const [preflight, setPreflight] = useState<MediaMigrationPreflight | null>(null);
@@ -73,6 +81,15 @@ export default function MediaAccessAudit({ slug, disabled }: { slug: string; dis
         <p>변환 후보 {preflight.candidateFiles}개 · 메타데이터 적합 {preflight.compatibleCandidateFiles}개 · 기존 토큰 참조 {preflight.legacyTokenReferences}개</p>
         <p>지원 외 참조 {preflight.unsupportedImageReferences}개 · 저장 필드 외 참조 {preflight.unmappedStoredReferences}개 · 미확인 객체 {preflight.missingOrUnscannedObjects}개 · 미호환 객체 {preflight.incompatibleObjects}개</p>
         <p>사용처 미확인 토큰 객체 {preflight.unreferencedTokenObjects}개 · 추억 페이지 참조 {preflight.memoryReferences}개 · 추억 이미지 {preflight.memoryObjects}개</p>
+        {preflight.referenceRehearsal ? <div>
+          <strong>이미지 참조 변환·복원 모의검증</strong>
+          {preflight.referenceRehearsal.status === 'blocked' ? <p>검증 보류 · {rehearsalReasonLabels[preflight.referenceRehearsal.reason ?? ''] ?? '추가 확인 필요'}</p>
+            : <p>{preflight.referenceRehearsal.status === 'no-change' ? '변환할 참조 없음' : '변환 및 복원 모의검증 성공'}
+              {' · '}저장 버전 {preflight.referenceRehearsal.sourceVersion}
+              {' · '}변환 참조 {preflight.referenceRehearsal.changedReferences}개
+              {' · '}대상 파일 {preflight.referenceRehearsal.distinctChangedFiles}개</p>}
+          <p>실제 저장이나 토큰 폐기를 실행하지 않습니다.</p>
+        </div> : null}
         <ul>{preflight.blockers.map(blocker => <li key={blocker}>{blockerLabels[blocker] ?? '추가 확인 필요'}</li>)}</ul>
         <p>적합 판정은 메타데이터 기준이며 실제 브라우저·앱 표시와 토큰 폐기 안전성을 보장하지 않습니다. 기존 파일은 변경하지 않았습니다.</p>
       </div> : null}
