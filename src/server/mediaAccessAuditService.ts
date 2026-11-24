@@ -4,13 +4,13 @@ import { getServerStorageBucket } from './firebaseAdmin';
 import { findEventSlugIndexBySlug, findStoredEventSummaryById } from './repositories/eventRepository';
 import { MediaAssetError } from './mediaAssetService';
 
-const MAX_OBJECTS_PER_PREFIX = 300;
+export const MAX_OBJECTS_PER_PREFIX = 300;
 const IMAGE_NAMESPACES = ['wedding-images', 'memory-images'] as const;
 type ImageNamespace = typeof IMAGE_NAMESPACES[number];
-type AuditedObject = { path: string; tokenPresent: boolean; noStore: boolean; variant: string | null };
-type AuditPage = { objects: AuditedObject[]; complete: boolean };
+export type AuditedObject = { path: string; tokenPresent: boolean; noStore: boolean; variant: string | null; gatewayCompatible?: boolean };
+export type AuditPage = { objects: AuditedObject[]; complete: boolean };
 
-async function listImageMetadata(prefix: string): Promise<AuditPage> {
+export async function listImageMetadata(prefix: string): Promise<AuditPage> {
   const bucket = getServerStorageBucket();
   if (!bucket) throw new MediaAssetError(503, '이미지 저장소를 확인할 수 없습니다.');
   const [files, nextQuery] = await bucket.getFiles({
@@ -25,11 +25,17 @@ async function listImageMetadata(prefix: string): Promise<AuditPage> {
       }
       const [data] = await file.getMetadata();
       const custom = data.metadata;
+      const size = Number(data.size);
+      const type = data.contentType ?? '';
       return {
         path: file.name,
         tokenPresent: typeof custom?.firebaseStorageDownloadTokens === 'string' && custom.firebaseStorageDownloadTokens.trim().length > 0,
         noStore: typeof data.cacheControl === 'string' && /(?:^|,)\s*no-store\s*(?:,|$)/i.test(data.cacheControl),
         variant: typeof custom?.variant === 'string' ? custom.variant : null,
+        gatewayCompatible: Number.isSafeInteger(size) && size > 0 && size <= 8 * 1024 * 1024 &&
+          ['image/jpeg', 'image/png', 'image/webp'].includes(type) &&
+          (!data.contentEncoding || data.contentEncoding === 'identity') &&
+          Boolean(data.generation && /^\d+$/.test(String(data.generation))),
       };
     }));
     objects.push(...metadata);
