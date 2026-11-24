@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { projectMobileUploadReference } from '@/server/mobileUploadReferencePolicy';
 
 import type { EditableImageAssetKind } from '@/lib/imageUploadPolicy';
 import { toSafeHttpErrorResponse } from '@/server/apiErrorResponse';
@@ -214,8 +215,14 @@ export async function POST(
       uploadSessionId: uploadPayload.uploadSessionId || 'legacy-mobile-upload',
     });
 
-    return NextResponse.json(result, {
-      headers: buildRateLimitHeaders(rateLimitResult),
+    const session = access.mobileSession;
+    const projected = projectMobileUploadReference(result, {
+      slug: pageSlug, requestedVersion: new URL(request.url).searchParams.get('mediaVersion'),
+      ownerBound: Boolean(session?.sessionId && session.ownerUid && session.eventId && session.pageSlug === pageSlug &&
+        session.scopes.includes('canViewDashboard') && session.scopes.includes('canEditInvitation')),
+    });
+    return NextResponse.json(projected, {
+      headers: { ...buildRateLimitHeaders(rateLimitResult), 'Cache-Control': 'no-store' },
     });
   } catch (error) {
     if (error instanceof EditableImageUploadError) {
