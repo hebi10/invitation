@@ -67,6 +67,7 @@ const core = [
   'test-customer-guestbook-management',
   'test-media-asset-management',
   'test-media-migration-preflight',
+  'test-admin-media-library',
   'test-mobile-upload-cleanup',
   'test-wizard-stable-media',
   'test-customer-account-ui-contracts',

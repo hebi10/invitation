@@ -7,12 +7,12 @@ import { materializeInvitationMediaUrls } from '@/lib/invitationPreviewMedia';
 import { getWizardProtectedMediaUrl, isStableInvitationImageReference } from '@/lib/invitationStableMedia';
 
 type Result = { key: string; url: string; error: boolean };
-function useAdminMediaObject(reference: string, slug: string, enabled: boolean) {
+function useAdminMediaObject(reference: string, slug: string, enabled: boolean, attempt = 0) {
   const { isAdminLoggedIn, authUser } = useAdmin();
   const uid = isAdminLoggedIn ? authUser?.uid ?? '' : '';
   const protectedRef = isStableInvitationImageReference(reference);
   const path = protectedRef ? getWizardProtectedMediaUrl(reference, slug) : null;
-  const key = JSON.stringify([reference, slug, uid]);
+  const key = JSON.stringify([reference, slug, uid, attempt]);
   const [result, setResult] = useState<Result | null>(null);
   const current = result?.key === key && enabled && uid ? result : null;
   useEffect(() => {
@@ -65,12 +65,12 @@ export function AdminMediaThumbnail({ reference, slug, alt, className }: {
 }
 
 export function AdminMediaVariantLink({ reference, slug, label }: { reference: string; slug: string; label: string }) {
-  const [requested, setRequested] = useState(false);
-  const media = useAdminMediaObject(reference, slug, requested);
+  const [attempt, setAttempt] = useState(0);
+  const requested = attempt > 0;
+  const media = useAdminMediaObject(reference, slug, requested, attempt);
   if (!reference) return <span>{label} 확인 필요</span>;
   if (!media.protectedRef || media.url) return <a href={media.url} target="_blank" rel="noreferrer">{label}</a>;
   return <button type="button" disabled={requested && !media.error} onClick={() => {
-    // A failed request can be retried after the next inventory refresh.
-    setRequested(true);
-  }}>{requested ? media.error ? label + ' 확인 필요' : label + ' 불러오는 중' : label + ' 불러오기'}</button>;
+    setAttempt(value => value + 1);
+  }}>{requested ? media.error ? label + ' 다시 불러오기' : label + ' 불러오는 중' : label + ' 불러오기'}</button>;
 }
