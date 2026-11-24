@@ -2,6 +2,7 @@ import type { MobileInvitationCreationInput } from '../types/mobileInvitation';
 import type { MobileBillingProductId } from './mobileBillingProducts';
 import { getStoredString, setStoredString } from './storage';
 import { finishBillingPurchase, getBillingTransactionHistory, isDefinitelyUnchargedBillingError } from './billing';
+import { isLegacyProductionApiBaseUrl, PRODUCTION_API_BASE_URL } from './apiCore';
 
 export type PurchaseRequest = {
   appUserId: string;
@@ -45,6 +46,9 @@ async function readPendingPurchase() {
     if (!parsed?.request?.target || !parsed.request.appUserId || (!validReceipt && !validIntent)) {
       throw new Error('Invalid receipt');
     }
+    if (isLegacyProductionApiBaseUrl(parsed.request.apiBaseUrl)) {
+      parsed.request.apiBaseUrl = PRODUCTION_API_BASE_URL;
+    }
     pendingInMemory = parsed;
     return parsed;
   } catch {
@@ -74,7 +78,12 @@ export async function recoverPendingBillingPurchase<T>(
 export async function runPendingBillingPurchase<T>(
   request: PurchaseRequest,
   options: {
-    purchase: () => Promise<{ appUserId: string; productIdentifier: MobileBillingProductId; transactionIdentifier: string; purchaseToken?: string }>;
+    purchase: (beforeLaunch: () => Promise<void>) => Promise<{
+      appUserId: string;
+      productIdentifier: MobileBillingProductId;
+      transactionIdentifier: string;
+      purchaseToken?: string;
+    }>;
     fulfill: (receipt: Receipt) => Promise<T>;
     onResume?: () => void;
   }
@@ -105,19 +114,23 @@ export async function runPendingBillingPurchase<T>(
           transactionId: candidates[0].transactionIdentifier, purchaseToken: candidates[0].purchaseToken };
       }
     } else {
-      // Persist the target and a fresh history baseline BEFORE Google Play can charge.
-      const history = await getBillingTransactionHistory({ appUserId: request.appUserId });
-      pending = {
-        request: JSON.parse(JSON.stringify(request)) as PurchaseRequest,
-        receipt: null,
-        // Record a pre-charge baseline; Play may report a purchase after process death.
-        startedAt: Math.floor(Date.parse(history.requestDate) / 1000) * 1000,
-        previousTransactionIds: history.transactions.map(transaction => transaction.transactionIdentifier),
-      };
-      await setStoredString(STORAGE_KEY, JSON.stringify(pending));
-      pendingInMemory = pending;
+      const checkout: { intent?: PendingPurchase } = {};
       try {
-        const purchase = await options.purchase();
+        const purchase = await options.purchase(async () => {
+          // Product preparation is complete. Persist the target before opening Play.
+          const history = await getBillingTransactionHistory({ appUserId: request.appUserId });
+          const intent: PendingPurchase = {
+            request: JSON.parse(JSON.stringify(request)) as PurchaseRequest,
+            receipt: null,
+            startedAt: Math.floor(Date.parse(history.requestDate) / 1000) * 1000,
+            previousTransactionIds: history.transactions.map(transaction => transaction.transactionIdentifier),
+          };
+          await setStoredString(STORAGE_KEY, JSON.stringify(intent));
+          checkout.intent = intent;
+          pendingInMemory = intent;
+        });
+        if (!checkout.intent) throw new Error('결제 요청을 확인하지 못했습니다.');
+        pending = checkout.intent;
         if (purchase.appUserId !== request.appUserId || purchase.productIdentifier !== request.productId ||
             !purchase.transactionIdentifier.trim() || !purchase.purchaseToken?.trim()) throw new Error('결제 거래 정보를 확인하지 못했습니다.');
         pending.receipt = {
@@ -127,7 +140,7 @@ export async function runPendingBillingPurchase<T>(
           purchaseToken: purchase.purchaseToken,
         };
       } catch (error) {
-        if (isDefinitelyUnchargedBillingError(error)) {
+        if (checkout.intent && isDefinitelyUnchargedBillingError(error)) {
           await setStoredString(STORAGE_KEY, null);
           pendingInMemory = null;
         }

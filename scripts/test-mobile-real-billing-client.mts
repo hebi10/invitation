@@ -11,7 +11,17 @@ const source = ts.transpileModule(readFileSync('apps/mobile/src/lib/billing.ts',
 }).outputText;
 const sku = 'page_creation_premium';
 type Purchase = { id: string; productId: string; purchaseToken: string; purchaseState: string; store: string; transactionDate: number };
-function fixture(overrides: { os?: string; price?: number; currency?: string; missing?: boolean; cancelled?: boolean; pending?: boolean } = {}) {
+function fixture(overrides: {
+  os?: string;
+  price?: number;
+  currency?: string;
+  missing?: boolean;
+  failProductLookup?: boolean;
+  cancelled?: boolean;
+  cancelOnDispatch?: boolean;
+  networkOnDispatch?: boolean;
+  pending?: boolean;
+} = {}) {
   const calls: string[] = [];
   let onPurchase: ((value: Purchase) => void) | undefined;
   let onError: ((value: { code: string }) => void) | undefined;
@@ -30,11 +40,14 @@ function fixture(overrides: { os?: string; price?: number; currency?: string; mi
     purchaseErrorListener: (callback: (error: { code: string }) => void) => { onError = callback; return { remove() {} }; },
     fetchProducts: async () => {
       calls.push('products');
+      if (overrides.failProductLookup) throw new Error('Play product lookup failed');
       return overrides.missing ? [] : [{ id: sku, store: 'google', price: overrides.price ?? 5000, currency: overrides.currency ?? 'KRW' }];
     },
     getAvailablePurchases: async () => { calls.push('history'); return owned; },
     requestPurchase: async ({ request }: { request: { google: { obfuscatedAccountId: string } } }) => {
       calls.push('purchase');
+      if (overrides.cancelOnDispatch) throw { code: 'user-cancelled' };
+      if (overrides.networkOnDispatch) throw { code: 'network-error' };
       assert.equal(request.google.obfuscatedAccountId,
         createHash('sha256').update('customer-1').digest('hex'), 'Do not send plain user IDs to Google Play');
       queueMicrotask(() => {
@@ -63,7 +76,10 @@ function fixture(overrides: { os?: string; price?: number; currency?: string; mi
       if (id === 'react-native') return { Platform: { OS: overrides.os ?? 'android' } };
       if (id === 'expo-crypto') return {
         CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
-        digestStringAsync: async (_algorithm: string, raw: string) => createHash('sha256').update(raw).digest('hex'),
+        digestStringAsync: async (_algorithm: string, raw: string) => {
+          calls.push('hash');
+          return createHash('sha256').update(raw).digest('hex');
+        },
       };
       if (id === 'expo-iap') return sdk;
       if (id === './storage') return { getStoredString: async () => 'customer-1', setStoredString: async () => {} };
@@ -72,7 +88,10 @@ function fixture(overrides: { os?: string; price?: number; currency?: string; mi
   });
   return {
     calls,
-    purchase: exports.purchaseBillingProduct as (id: string, options: { appUserId: string }) => Promise<{ purchaseToken: string; transactionIdentifier: string }>,
+    purchase: exports.purchaseBillingProduct as (id: string, options: {
+      appUserId: string;
+      beforeLaunch?: () => Promise<void>;
+    }) => Promise<{ purchaseToken: string; transactionIdentifier: string }>,
     history: exports.getBillingTransactionHistory as (options: { appUserId: string }) => Promise<{ transactions: Array<{ purchaseToken: string }> }>,
     finish: exports.finishBillingPurchase as (token: string) => Promise<void>,
     uncharged: exports.isDefinitelyUnchargedBillingError as (value: unknown) => boolean,
@@ -80,18 +99,52 @@ function fixture(overrides: { os?: string; price?: number; currency?: string; mi
 }
 
 const good = fixture();
-const receipt = await good.purchase(sku, { appUserId: 'customer-1' });
+const receipt = await good.purchase(sku, {
+  appUserId: 'customer-1',
+  beforeLaunch: async () => {
+    await Promise.resolve();
+    good.calls.push('persisted');
+  },
+});
 assert.equal(receipt.purchaseToken, 'valid-store-token', 'Use Play purchase token for backend verification');
 assert.equal(receipt.transactionIdentifier, receipt.purchaseToken,
   'The client sends the purchase token; only Google can certify an order ID.');
-assert(good.calls.includes('purchase'));
+assert.deepEqual(good.calls, ['connect', 'products', 'hash', 'persisted', 'purchase'],
+  'Prepare the product and account before persisting, and wait for durable storage before opening Play');
 await good.finish(receipt.purchaseToken);
 assert.equal(good.calls.filter(x => x === 'finish').length, 1, 'Finish the consumable after server fulfillment');
 assert.equal((await good.history({ appUserId: 'customer-1' })).transactions.length, 0);
 
+const failedLookup = fixture({ failProductLookup: true });
+await assert.rejects(failedLookup.purchase(sku, {
+  appUserId: 'customer-1',
+  beforeLaunch: async () => { failedLookup.calls.push('persisted'); },
+}), /Play product lookup failed/);
+assert.deepEqual(failedLookup.calls, ['connect', 'products'],
+  'Product lookup errors must occur before saving a request or opening Play');
+
+const failedPersistence = fixture();
+await assert.rejects(failedPersistence.purchase(sku, {
+  appUserId: 'customer-1',
+  beforeLaunch: async () => {
+    await Promise.resolve();
+    throw new Error('Purchase intent storage failed');
+  },
+}), /Purchase intent storage failed/);
+assert(!failedPersistence.calls.includes('purchase'), 'Play must not open when storing a request fails');
+
 const cancelled = fixture({ cancelled: true });
 await assert.rejects(cancelled.purchase(sku, { appUserId: 'customer-1' }), /취소/);
 assert(cancelled.uncharged(await cancelled.purchase('ticket_pack_1', { appUserId: 'customer-1' }).catch(e => e)));
+const cancelledAtDispatch = fixture({ cancelOnDispatch: true });
+const cancelledDispatchError = await cancelledAtDispatch.purchase(sku, { appUserId: 'customer-1' }).catch(e => e);
+assert(cancelledAtDispatch.uncharged(cancelledDispatchError),
+  'A native requestPurchase cancellation must clear the pending intent without a charge');
+assert.match(cancelledDispatchError.message, /취소/);
+const networkAtDispatch = fixture({ networkOnDispatch: true });
+const uncertainDispatchError = await networkAtDispatch.purchase(sku, { appUserId: 'customer-1' }).catch(e => e);
+assert(!networkAtDispatch.uncharged(uncertainDispatchError),
+  'A network error may have charged the customer; the purchase must remain recoverable');
 const pending = fixture({ pending: true });
 await assert.rejects(pending.purchase(sku, { appUserId: 'customer-1' }), /대기/);
 assert(!pending.calls.includes('finish'), 'Pending payment must not be consumed');

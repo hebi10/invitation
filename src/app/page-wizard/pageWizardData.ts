@@ -452,6 +452,17 @@ const OPENING_EVENT_STEP_KEYS: WizardStepKey[] = [
   'final',
 ];
 
+const LEGACY_OTHER_EVENT_STEP_KEYS: WizardStepKey[] = [
+  'basic',
+  'schedule',
+  'greeting',
+  'images',
+  'music',
+  'extra',
+  'intro',
+  'final',
+];
+
 const WIZARD_STEP_CONFIGS: Record<WizardStepConfigKey, WizardStepConfigDefinition> = {
   'wedding-page-wizard': {
     key: 'wedding-page-wizard',
@@ -492,15 +503,15 @@ const WIZARD_STEP_CONFIGS: Record<WizardStepConfigKey, WizardStepConfigDefinitio
     key: 'seventieth-page-wizard',
     eventType: 'seventieth',
     commonSetupSteps: ['eventType', 'theme', 'slug'],
-    eventSpecificSteps: WEDDING_EVENT_STEP_KEYS,
-    editSteps: WEDDING_EVENT_STEP_KEYS,
+    eventSpecificSteps: LEGACY_OTHER_EVENT_STEP_KEYS,
+    editSteps: LEGACY_OTHER_EVENT_STEP_KEYS,
   },
   'generic-page-wizard': {
     key: 'generic-page-wizard',
     eventType: 'etc',
     commonSetupSteps: ['eventType', 'theme', 'slug'],
-    eventSpecificSteps: WEDDING_EVENT_STEP_KEYS,
-    editSteps: WEDDING_EVENT_STEP_KEYS,
+    eventSpecificSteps: LEGACY_OTHER_EVENT_STEP_KEYS,
+    editSteps: LEGACY_OTHER_EVENT_STEP_KEYS,
   },
 };
 
@@ -1379,13 +1390,11 @@ export function buildStepValidation(
       const messages: string[] = [];
       const validImage = (value: string | undefined) =>
         Boolean(value && (allowedImagePaths.includes(value) || isValidUrl(value)));
-      if (!hasText(formState?.metadata.images.wedding)) {
+      const coverImage = formState?.metadata.images.wedding;
+      const hasCoverImage = hasText(coverImage);
+      if (!hasCoverImage && formState?.eventType !== 'wedding') {
         messages.push('대표 이미지를 업로드해 주세요.');
-      }
-      if (
-        hasText(formState?.metadata.images.wedding) &&
-        !validImage(formState?.metadata.images.wedding)
-      ) {
+      } else if (hasCoverImage && !validImage(coverImage)) {
         messages.push('대표 이미지를 다시 업로드해 주세요.');
       }
       if ((formState?.pageData?.galleryImages ?? []).some((value) => !validImage(value))) {

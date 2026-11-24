@@ -1,0 +1,57 @@
+name: Wedding intro comparison browser QA
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/invitation-intro-comparison-qa.yml
+      - scripts/qa-wedding-intro-comparison.py
+      - src/app/sample-invitation/**
+      - src/config/homeWeddingSample.ts
+      - public/images/wedding-intro/bouquet-ribbon.*
+      - public/images/wedding-intro/seal-*.webp
+      - public/images/home-wedding/portrait.webp
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      NEXT_PUBLIC_USE_FIREBASE: 'false'
+      NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Next.js and Chromium test dependencies
+        run: |
+          npm ci
+          python -m pip install --disable-pip-version-check playwright==1.56.0 pillow==11.3.0
+          python -m playwright install --with-deps chromium
+      - name: Start local sample preview
+        run: |
+          npx --no-install next dev --hostname 127.0.0.1 > "$RUNNER_TEMP/intro-comparison-next.log" 2>&1 &
+          curl --fail --silent --show-error --retry 30 --retry-connrefused --retry-delay 2 --max-time 45 \
+            http://127.0.0.1:3000/mobile-intro-preview/?style=none > /dev/null
+      - name: Compare three intro previews in Chromium
+        timeout-minutes: 5
+        run: python -u scripts/qa-wedding-intro-comparison.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wedding-intro-comparison-screenshots
+          path: test-results/wedding-intro-comparison/
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Print preview server log on failure
+        if: failure()
+        run: tail -80 "$RUNNER_TEMP/intro-comparison-next.log"

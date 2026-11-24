@@ -75,6 +75,7 @@ function load(file: string): unknown {
   return loaded.exports;
 }
 const service = load('src/services/invitationPageService.ts') as typeof import('../src/services/invitationPageService');
+const clientEventRepository = load('src/services/repositories/clientEventRepositoryCore.ts') as typeof import('../src/services/repositories/clientEventRepositoryCore');
 function seed() {
   records.clear(); writes.length = 0; admin = true; failWrite = false; beforeTransaction = null;
   records.set('eventSlugIndex/design-test', { slug: 'design-test', eventId: 'evt_design-test', eventType: 'wedding', status: 'active' });
@@ -114,7 +115,7 @@ beforeTransaction = () => Object.assign(records.get(eventPath)!, {
   defaultTheme: 'romantic', displayPeriod: { isActive: true, startDate: start, endDate: end },
   visibility: { published: false, displayStartAt: start, displayEndAt: end }, ownerUid: 'customer-after',
 });
-await service.setInvitationPagePublished('design-test', true);
+await clientEventRepository.updateClientEventVisibilityBySlug('design-test', { published: true });
 saved = records.get(eventPath)!;
 assert.equal(saved.published, true);
 assert.equal((saved.visibility as Data).published, true);
@@ -140,11 +141,11 @@ await assert.rejects(periods.setDisplayPeriod('design-test', new Date('invalid')
 assert.equal(writes.length, 0);
 seed();
 beforeTransaction = () => { records.delete(eventPath); };
-await assert.rejects(service.setInvitationPagePublished('design-test', true), /찾을 수/);
+await assert.rejects(clientEventRepository.updateClientEventVisibilityBySlug('design-test', { published: true }), /찾을 수/);
 assert.equal(records.has(eventPath), false, '삭제된 이벤트를 복구하면 안 됩니다.');
 seed();
 beforeTransaction = () => { records.get('eventSlugIndex/design-test')!.status = 'deleted'; };
-await assert.rejects(service.setInvitationPagePublished('design-test', true), /주소/);
+await assert.rejects(clientEventRepository.updateClientEventVisibilityBySlug('design-test', { published: true }), /주소/);
 assert.equal(writes.length, 0);
 seed(); failWrite = true;
 await assert.rejects(periods.setDisplayPeriod('design-test', start, end, true), /network unavailable/);

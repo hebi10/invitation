@@ -10,6 +10,7 @@ import { isInvitationThemeKey } from '@/lib/invitationThemes';
 import {
   GENERIC_SERVER_ERROR_MESSAGE,
   getInternalErrorReason,
+  toInvitationPublicationErrorResponse,
   toSafeHttpErrorResponse,
 } from '@/server/apiErrorResponse';
 import {
@@ -170,7 +171,6 @@ async function resolveHighRiskRequirement(
 
   if (
     action !== MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.save &&
-    action !== MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.restore &&
     action !== MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.setPublished
   ) {
     return null;
@@ -385,6 +385,14 @@ export async function POST(
           { status: 404 }
         );
       }
+      const published = typeof body.published === 'boolean' ? body.published : undefined;
+      const canManagePublication = hasMobileClientEditorPermission(access.permissions, 'canManagePublication');
+      if (!canManagePublication && published !== undefined && published !== currentPageConfig.published) {
+        return NextResponse.json(
+          { error: buildMissingMobileClientEditorPermissionError('canManagePublication') },
+          { status: 403, headers: buildRateLimitHeaders(rateLimitResult) }
+        );
+      }
 
       const entitlementTrustedConfig =
         buildServerTrustedMobileInvitationPageConfigForSave(trustedConfig, {
@@ -395,7 +403,8 @@ export async function POST(
 
       const saved = await saveServerInvitationPageConfig(entitlementTrustedConfig, {
         expectedVersion: requireInvitationContentVersion(body.expectedVersion),
-        published: body.published === true,
+        published: canManagePublication ? published : undefined,
+        allowFirstPublication: highRiskRequirement?.action === 'publishInvitation',
         defaultTheme,
       });
       await writeHighRiskActionAuditLog(access, pageSlug, highRiskRequirement, 'success');
@@ -407,7 +416,6 @@ export async function POST(
 
     if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.restore) {
       await restoreServerInvitationPageConfig(pageSlug, {
-        published: body?.published === true,
         defaultTheme,
       });
       await writeHighRiskActionAuditLog(access, pageSlug, highRiskRequirement, 'success');
@@ -427,6 +435,7 @@ export async function POST(
 
       await setServerInvitationPagePublished(pageSlug, body.published, {
         defaultTheme,
+        allowFirstPublication: highRiskRequirement?.action === 'publishInvitation',
       });
       await writeHighRiskActionAuditLog(access, pageSlug, highRiskRequirement, 'success');
       return NextResponse.json(
@@ -446,7 +455,6 @@ export async function POST(
       }
 
       await setServerInvitationPageVariantAvailability(pageSlug, variantKey, body.available, {
-        published: body?.published === true,
         defaultTheme,
       });
       await writeHighRiskActionAuditLog(access, pageSlug, highRiskRequirement, 'success', null, {
@@ -578,7 +586,7 @@ export async function POST(
         ...('currentVersion' in error ? { currentVersion: error.currentVersion } : {}),
       }, { status: error.status });
     }
-    console.error('[mobile/client-editor/pages] failed to process request', error);
+    const publicationError = toInvitationPublicationErrorResponse(error, buildRateLimitHeaders(rateLimitResult));
     await writeHighRiskActionAuditLog(
       access,
       pageSlug,
@@ -586,10 +594,14 @@ export async function POST(
       'failure',
       getInternalErrorReason(error)
     );
-    if (action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.redeemDisplayPeriodTicket &&
+    if (publicationError) return publicationError;
+    if ((action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.redeemDisplayPeriodTicket ||
+        action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.save ||
+        action === MOBILE_CLIENT_EDITOR_PAGE_ACTIONS.setPublished) &&
         error instanceof Error && 'status' in error && typeof error.status === 'number') {
       return toSafeHttpErrorResponse(error as Error & { status: number });
     }
+    console.error('[mobile/client-editor/pages] failed to process request', error);
     return NextResponse.json(
       { error: GENERIC_SERVER_ERROR_MESSAGE },
       { status: 500 }
