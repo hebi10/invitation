@@ -1,4 +1,4 @@
-import type { InvitationPage, InvitationPageData, InvitationPageDataBase } from '@/types/invitationPage';
+import type { InvitationPage, InvitationPageSeed, InvitationPageData, InvitationPageDataBase } from '@/types/invitationPage';
 
 const IMAGE_FIELDS = ['wedding', 'favicon', 'social', 'kakaoCard'] as const;
 const DATA_SINGLE_FIELDS = ['coverImageThumbnailUrl'] as const;
@@ -30,7 +30,7 @@ export function isInvitationPreviewMediaUrl(value: string, slug: string, mode: I
   } catch { return false; }
 }
 
-export function mapInvitationImageFields(page: InvitationPage, project: (value: string) => string): InvitationPage {
+export function mapInvitationImageFields<T extends InvitationPageSeed>(page: T, project: (value: string) => string): T {
   const images = { ...page.metadata.images };
   for (const key of IMAGE_FIELDS) {
     const value = images[key];
@@ -62,7 +62,7 @@ export function mapInvitationImageFields(page: InvitationPage, project: (value: 
   return { ...page, metadata: { ...page.metadata, images }, ...(pageData ? { pageData } : {}) };
 }
 
-export function collectInvitationPreviewMediaUrls(page: InvitationPage, slug: string, mode: InvitationPreviewMediaMode) {
+export function collectInvitationPreviewMediaUrls(page: InvitationPageSeed, slug: string, mode: InvitationPreviewMediaMode) {
   const urls = new Set<string>();
   mapInvitationImageFields(page, value => {
     if (isInvitationPreviewMediaUrl(value, slug, mode)) urls.add(value);
@@ -83,8 +83,8 @@ export interface MaterializedInvitationPreviewMedia {
 }
 
 /** Keep authenticated image bytes in this preview only. Never place credentials in image URLs. */
-export async function materializeInvitationPreviewMedia(
-  page: InvitationPage,
+export async function materializeInvitationMediaUrls(
+  inputUrls: readonly string[],
   slug: string,
   mode: InvitationPreviewMediaMode,
   token: string,
@@ -94,14 +94,14 @@ export async function materializeInvitationPreviewMedia(
     createObjectUrl: (blob: Blob) => URL.createObjectURL(blob),
     revokeObjectUrl: (url: string) => URL.revokeObjectURL(url),
   },
-): Promise<MaterializedInvitationPreviewMedia> {
-  const urls = collectInvitationPreviewMediaUrls(page, slug, mode);
+) {
+  const urls = [...new Set(inputUrls)];
   const objects = new Map<string, string>();
   const dispose = () => {
     objects.forEach(url => dependencies.revokeObjectUrl(url));
     objects.clear();
   };
-  if (!urls.length) return { page, dispose };
+  if (!urls.length) return { objects, dispose };
   if (!token || /\s/.test(token) || urls.length > MAX_PREVIEW_IMAGES) {
     throw new Error('이미지 미리보기 권한 또는 사진 수를 확인해 주세요.');
   }
@@ -134,9 +134,24 @@ export async function materializeInvitationPreviewMedia(
       if (rejected) throw new Error('사진을 불러오지 못했습니다. 미리보기를 다시 열어 주세요.');
     }
     signal.throwIfAborted();
-    return { page: mapInvitationImageFields(page, value => objects.get(value) ?? value), dispose };
+    return { objects, dispose };
   } catch (error) {
     dispose();
     throw error;
   }
+}
+
+
+export async function materializeInvitationPreviewMedia(
+  page: InvitationPage,
+  slug: string,
+  mode: InvitationPreviewMediaMode,
+  token: string,
+  signal: AbortSignal,
+  dependencies?: Parameters<typeof materializeInvitationMediaUrls>[5],
+): Promise<MaterializedInvitationPreviewMedia> {
+  const { objects, dispose } = await materializeInvitationMediaUrls(
+    collectInvitationPreviewMediaUrls(page, slug, mode), slug, mode, token, signal, dependencies,
+  );
+  return { page: objects.size ? mapInvitationImageFields(page, value => objects.get(value) ?? value) : page, dispose };
 }

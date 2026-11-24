@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { randomUUID } from 'node:crypto';
+import { hashMobileUploadEditorSession } from './mobileUploadCleanupPolicy';
 
 import {
   type EditableImageAssetKind,
@@ -332,11 +333,13 @@ export async function saveServerOptimizedEditableImage({
   file,
   assetKind,
   uploadSessionId,
+  mobileEditorSessionId,
 }: {
   pageSlug: string;
   file: File;
   assetKind: EditableImageAssetKind;
   uploadSessionId?: string | null;
+  mobileEditorSessionId?: string | null;
 }): Promise<ServerEditableImageUploadResult> {
   const normalizedPageSlug = pageSlug.trim();
   if (!normalizedPageSlug) {
@@ -375,6 +378,7 @@ export async function saveServerOptimizedEditableImage({
     fileName: file.name,
     assetKind,
   });
+  const mobileEditorSessionHash = hashMobileUploadEditorSession(mobileEditorSessionId);
   const storedFileName = optimizedImages.content.fileName;
   const originalPath = `wedding-images/${normalizedPageSlug}/${optimizedImages.original.fileName}`;
   const imagePath = `wedding-images/${normalizedPageSlug}/${optimizedImages.content.fileName}`;
@@ -397,6 +401,7 @@ export async function saveServerOptimizedEditableImage({
           pageSlug: normalizedPageSlug,
           assetKind,
           ...(uploadSessionId ? { uploadSessionId } : {}),
+          ...(mobileEditorSessionHash ? { mobileEditorSessionHash } : {}),
           originalFileName: file.name,
           firebaseStorageDownloadTokens: originalDownloadToken,
           variant: 'original',
@@ -412,6 +417,7 @@ export async function saveServerOptimizedEditableImage({
           pageSlug: normalizedPageSlug,
           assetKind,
           ...(uploadSessionId ? { uploadSessionId } : {}),
+          ...(mobileEditorSessionHash ? { mobileEditorSessionHash } : {}),
           originalFileName: file.name,
           firebaseStorageDownloadTokens: downloadToken,
           variant: 'content',
@@ -427,6 +433,7 @@ export async function saveServerOptimizedEditableImage({
           pageSlug: normalizedPageSlug,
           assetKind,
           ...(uploadSessionId ? { uploadSessionId } : {}),
+          ...(mobileEditorSessionHash ? { mobileEditorSessionHash } : {}),
           originalFileName: file.name,
           firebaseStorageDownloadTokens: thumbnailDownloadToken,
           variant: 'thumbnail',
