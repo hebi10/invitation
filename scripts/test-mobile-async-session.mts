@@ -4,6 +4,7 @@ import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import { resolveEditorSavePolicy } from '../apps/mobile/src/features/manage/editorSavePolicy';
 import { validateEditorRows } from '../apps/mobile/src/features/manage/editorDelimitedRows';
+import { parseInvitationIntroChoice } from '../apps/mobile/src/lib/invitationIntroCatalog';
 import { getWeddingDateTimeInputError, readWeddingDateTimeInputs } from '../apps/mobile/src/features/manage/editorWeddingDateTime';
 
 // React Native is not available in Node. Keep state/ref slots across renders;
@@ -87,6 +88,7 @@ assert.equal(await savingB, false, 'An obsolete save completion must not update 
     };
     if (id === '../../../contexts/AuthContext') return { useAuth: () => ({ runHighRiskAction: async (_options: unknown, action: () => Promise<boolean>) => confirmPublication ? action() : false }) };
     if (id === '@react-navigation/native') return { useIsFocused: () => false };
+    if (id === '../../../lib/invitationIntroCatalog') return { parseInvitationIntroChoice };
     if (id === '../editorSavePolicy') return { resolveEditorSavePolicy };
     if (id === '../editorDelimitedRows') return { validateEditorRows };
     if (id === '../editorWeddingDateTime') return { getWeddingDateTimeInputError, readWeddingDateTimeInputs };

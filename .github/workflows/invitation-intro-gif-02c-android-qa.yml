@@ -1,0 +1,72 @@
+name: Invitation INTRO-GIF-02-C Android preset / sample preview QA
+
+on:
+  pull_request:
+    paths:
+      - apps/mobile/src/features/manage/**
+      - apps/mobile/src/features/screens/manage.tsx
+      - apps/mobile/src/lib/weddingIntroPreview.ts
+      - apps/mobile/src/types/mobileInvitation.ts
+      - src/app/mobile-gif-intro-preview/**
+      - scripts/test-invitation-intro-02c-android.mts
+      - scripts/qa-invitation-intro-gif-02c-android.py
+      - .github/workflows/invitation-intro-gif-02c-android-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android-intro-preset:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies and browser
+        run: |
+          npm ci
+          python -m pip install --disable-pip-version-check playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - name: Test Android ID save, reload, PC and legacy compatibility
+        run: node scripts/run-test-suite.mjs test-invitation-intro-02c-android
+      - name: Launch isolated sample GIF preview
+        env:
+          NEXT_PUBLIC_USE_FIREBASE: 'false'
+          NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+        run: |
+          nohup npm run dev > "$RUNNER_TEMP/intro-02c-next.log" 2>&1 &
+          python - <<'PY'
+          import time, urllib.request
+          url = "http://127.0.0.1:3000/mobile-gif-intro-preview/?preset=intro-01"
+          for _ in range(95):
+              try:
+                  with urllib.request.urlopen(url, timeout=12) as response:
+                      if response.status == 200:
+                          print("GIF preview fixture ready")
+                          break
+              except Exception:
+                  pass
+              time.sleep(2)
+          else:
+              raise SystemExit("GIF preview fixture unavailable")
+          PY
+      - name: Run mobile viewports, replay, reduced-motion, invalid ID and GIF failure QA
+        run: python scripts/qa-invitation-intro-gif-02c-android.py
+      - name: Preserve screenshots and SHA256 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-intro-gif-02c-android-preview-qa
+          path: artifacts/intro-gif-02c-android/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Show preview server diagnostics on failure
+        if: failure()
+        run: tail -120 "$RUNNER_TEMP/intro-02c-next.log" || true

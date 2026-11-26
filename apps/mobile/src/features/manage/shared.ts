@@ -10,6 +10,7 @@ import type {
   MobileInvitationThemeKey,
 } from '../../types/mobileInvitation';
 import { normalizeWeddingIntroStyle, type WeddingIntroStyle } from '../../lib/weddingIntro';
+import { parseInvitationIntroChoice, type InvitationIntroChoice } from '../../lib/invitationIntroCatalog';
 import { DEFAULT_INVITATION_THEME } from '../../lib/invitationThemes';
 import { createRandomSuffix } from '../../lib/id';
 import { getWeddingDateTimeInputError, readWeddingDateTimeInputs, type WeddingDateTimeInputs } from './editorWeddingDateTime';
@@ -68,6 +69,7 @@ export type ManageFormState = WeddingDateTimeInputs & {
   shareDescription: string;
   musicEnabled: boolean;
   introStyle: WeddingIntroStyle;
+  introPresetId?: InvitationIntroChoice;
   musicCategoryId: string;
   musicTrackId: string;
   musicStoragePath: string;
@@ -77,7 +79,7 @@ export type ManageFormState = WeddingDateTimeInputs & {
 };
 
 export type ManageStringFieldKey = {
-  [K in keyof ManageFormState]: ManageFormState[K] extends string ? K : never;
+  [K in keyof ManageFormState]-?: ManageFormState[K] extends string ? K : never;
 }[keyof ManageFormState];
 
 export type GuestbookSortKey = 'latest' | 'oldest' | 'author-asc' | 'author-desc';
@@ -588,6 +590,7 @@ export function buildManageFormFromDashboard(
     shareDescription: readString(metadata.description),
     musicEnabled: dashboard.page.features.showMusic ? config.musicEnabled === true : false,
     introStyle: normalizeWeddingIntroStyle(config.introStyle),
+    introPresetId: parseInvitationIntroChoice(config.introPresetId) ?? undefined,
     musicCategoryId: readString(config.musicCategoryId),
     musicTrackId: readString(config.musicTrackId),
     musicStoragePath: readString(config.musicStoragePath),

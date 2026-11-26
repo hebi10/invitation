@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
 import { ActionButton } from '../../../../components/ActionButton';
@@ -5,7 +7,8 @@ import { Disclosure } from '../../../../components/Disclosure';
 import { AppText } from '../../../../components/AppText';
 import { SectionCard } from '../../../../components/SectionCard';
 import { TextField } from '../../../../components/TextField';
-import { WEDDING_INTRO_OPTIONS, type WeddingIntroStyle } from '../../../../lib/weddingIntro';
+import { WEDDING_INTRO_OPTIONS } from '../../../../lib/weddingIntro';
+import { getInvitationIntroPreset, listAvailableInvitationIntroPresets, parseInvitationIntroChoice, type InvitationIntroChoice, type InvitationIntroPresetId } from '../../../../lib/invitationIntroCatalog';
 import { useVisualPreferences } from '../../../../contexts/PreferencesContext';
 import type { ManageFormState, ManageStringFieldKey } from '../../shared';
 import { manageStyles } from '../../manageStyles';
@@ -13,63 +16,150 @@ import { manageStyles } from '../../manageStyles';
 type SettingsEditorStepProps = {
   form: ManageFormState;
   savedPublished?: boolean;
+  savedIntroPresetId: InvitationIntroChoice | null;
+  hasUnknownSavedIntroPreset: boolean;
+  introAssetBaseUrl: string;
   onUpdateField: (field: ManageStringFieldKey, value: string) => void;
   onSetPublished: (published: boolean) => void;
-  onSetIntroStyle: (style: WeddingIntroStyle) => void;
-  onPreviewIntro: (style: WeddingIntroStyle) => void;
+  onSetIntroPresetId: (choice: InvitationIntroChoice) => void;
+  onPreviewIntroPreset: (id: InvitationIntroPresetId) => void;
 };
 
 export function SettingsEditorStep({
   form,
   savedPublished = form.published,
+  savedIntroPresetId,
+  hasUnknownSavedIntroPreset,
+  introAssetBaseUrl,
   onUpdateField,
   onSetPublished,
-  onSetIntroStyle,
-  onPreviewIntro,
+  onSetIntroPresetId,
+  onPreviewIntroPreset,
 }: SettingsEditorStepProps) {
   const { palette } = useVisualPreferences();
+  const [failedPosters, setFailedPosters] = useState<Record<string, boolean>>({});
+  const selectedChoice = parseInvitationIntroChoice(form.introPresetId);
+  const legacyOption = WEDDING_INTRO_OPTIONS.find((option) => option.value === form.introStyle);
+  const savedLabel = savedIntroPresetId === 'none'
+    ? '사용 안 함'
+    : savedIntroPresetId
+      ? getInvitationIntroPreset(savedIntroPresetId)?.label ?? '기존 GIF'
+      : hasUnknownSavedIntroPreset
+        ? '현재 앱에서 지원하지 않는 인트로'
+        : form.introStyle !== 'none'
+          ? `기존 연출: ${legacyOption?.label ?? '기존 인트로'}`
+          : '미선택';
+  const draftLabel = selectedChoice === 'none'
+    ? '사용 안 함'
+    : selectedChoice
+      ? getInvitationIntroPreset(selectedChoice)?.label ?? '선택한 GIF'
+      : savedLabel;
 
   return (
     <>
       <Disclosure
-        title="첫 화면 애니메이션 (선택)"
-        description={`현재 선택: ${WEDDING_INTRO_OPTIONS.find(option => option.value === form.introStyle)?.label ?? '없음'} · 변경하려면 펼쳐 주세요.`}
+        title="인트로 GIF (선택)"
+        description={`저장된 설정: ${savedLabel} · 변경하려면 펼쳐 주세요.`}
       >
-        {WEDDING_INTRO_OPTIONS.map((option) => (
-          <View
-            key={option.value}
-            style={[
-              styles.introOption,
-              {
-                backgroundColor: form.introStyle === option.value ? palette.accentSoft : palette.surface,
-                borderColor: form.introStyle === option.value ? palette.accent : palette.cardBorder,
-              },
-            ]}
-          >
-            {form.introStyle === option.value ? (
-              <AppText variant="caption" color={palette.accent} style={styles.selectedLabel}>
-                현재 선택한 연출
-              </AppText>
-            ) : null}
-            <AppText variant="title">{option.label}</AppText>
-            <AppText variant="muted">{option.description}</AppText>
-            <ActionButton
-              fullWidth
-              variant={form.introStyle === option.value ? 'primary' : 'secondary'}
-              onPress={() => onSetIntroStyle(option.value)}
-              accessibilityState={{ selected: form.introStyle === option.value }}
-            >
-              {form.introStyle === option.value ? '선택됨' : '이 연출 선택'}
-            </ActionButton>
-            {option.value !== 'none' ? (
-              <ActionButton variant="secondary" fullWidth onPress={() => onPreviewIntro(option.value)}>
-                연출 보기
-              </ActionButton>
-            ) : null}
+        <AppText variant="muted">
+          초대장 디자인과 별개로 GIF 한 종류 또는 사용 안 함을 선택할 수 있습니다.
+          미리보기는 저장하지 않으며 기존 저장 버튼으로 확정됩니다.
+        </AppText>
+        {selectedChoice === null && form.introStyle !== 'none' ? (
+          <View style={[styles.introNotice, { backgroundColor: palette.surfaceMuted }]}>
+            <AppText variant="caption">
+              기존 인트로 {legacyOption?.label ?? '연출'}이(가) 유지됩니다. 새 GIF를 저장하기 전에는 변경되지 않습니다.
+            </AppText>
           </View>
-        ))}
+        ) : null}
+        {selectedChoice === null && hasUnknownSavedIntroPreset ? (
+          <View style={[styles.introNotice, { backgroundColor: palette.surfaceMuted }]}>
+            <AppText variant="caption">
+              다른 버전에서 저장된 인트로 ID가 있습니다. 새 선택 없이 다른 내용을 저장해도 기존 ID를 보존합니다.
+            </AppText>
+          </View>
+        ) : null}
+        <View style={[
+          styles.noneOption,
+          {
+            backgroundColor: selectedChoice === 'none' ? palette.accentSoft : palette.surface,
+            borderColor: selectedChoice === 'none' ? palette.accent : palette.cardBorder,
+          },
+        ]}>
+          <AppText variant="title">사용 안 함</AppText>
+          <AppText variant="muted">새 GIF 인트로를 사용하지 않습니다.</AppText>
+          {savedIntroPresetId === 'none' ? <AppText variant="caption">저장된 선택</AppText> : null}
+          <ActionButton
+            fullWidth
+            variant={selectedChoice === 'none' ? 'primary' : 'secondary'}
+            onPress={() => onSetIntroPresetId('none')}
+            accessibilityState={{ selected: selectedChoice === 'none' }}
+          >
+            {selectedChoice === 'none' ? '선택됨' : '사용 안 함 선택'}
+          </ActionButton>
+        </View>
+        <View style={styles.presetGrid}>
+          {listAvailableInvitationIntroPresets().map((preset) => {
+            const isSelected = selectedChoice === preset.id;
+            return (
+              <View
+                key={preset.id}
+                style={[
+                  styles.presetCard,
+                  {
+                    backgroundColor: isSelected ? palette.accentSoft : palette.surface,
+                    borderColor: isSelected ? palette.accent : palette.cardBorder,
+                  },
+                ]}
+              >
+                <View style={[styles.posterFrame, { backgroundColor: palette.surfaceMuted }]}>
+                  {failedPosters[preset.id] ? (
+                    <AppText variant="caption" color={palette.textMuted}>
+                      포스터를 불러오지 못했습니다.
+                    </AppText>
+                  ) : (
+                    <Image
+                      source={{ uri: new URL(preset.posterSrc, introAssetBaseUrl).toString() }}
+                      style={styles.posterImage}
+                      contentFit="contain"
+                      accessibilityLabel={`${preset.label} 인트로 정지 이미지`}
+                      onError={() => setFailedPosters((current) => ({ ...current, [preset.id]: true }))}
+                    />
+                  )}
+                </View>
+                <AppText variant="title">{preset.label}</AppText>
+                <AppText variant="muted">{preset.description}</AppText>
+                <AppText variant="caption" color={palette.textMuted}>
+                  {preset.durationMs / 1000}초 · {savedIntroPresetId === preset.id ? '저장된 선택' : '선택 가능'}
+                </AppText>
+                <ActionButton
+                  fullWidth
+                  variant={isSelected ? 'primary' : 'secondary'}
+                  onPress={() => onSetIntroPresetId(preset.id)}
+                  accessibilityState={{ selected: isSelected }}
+                >
+                  {isSelected ? '선택됨' : '이 GIF 선택'}
+                </ActionButton>
+                <ActionButton
+                  fullWidth
+                  variant="secondary"
+                  onPress={() => onPreviewIntroPreset(preset.id)}
+                  accessibilityLabel={`${preset.label} GIF 미리보기`}
+                >
+                  2초 미리보기
+                </ActionButton>
+              </View>
+            );
+          })}
+        </View>
+        {selectedChoice !== savedIntroPresetId && selectedChoice !== null ? (
+          <AppText variant="caption" color={palette.textMuted}>
+            저장 예정: {draftLabel} · 아직 실제 초대장에 적용되지 않았습니다.
+          </AppText>
+        ) : null}
         <AppText variant="caption" color={palette.textMuted}>
-          미리보기는 PC와 동일한 웹 연출을 샘플 정보로 재생합니다. 실제 데이터는 변경하지 않습니다.
+          제작된 GIF만 목록에 표시합니다. 미리보기에는 샘플 자료만 사용하며
+          공개 초대장의 GIF 재생 적용은 후속 단계에서 진행합니다.
         </AppText>
       </Disclosure>
 
@@ -132,8 +222,12 @@ export function SettingsEditorStep({
 
 const styles = StyleSheet.create({
   stateSummary: { padding: 14, gap: 6 },
-  introOption: { borderWidth: 1, borderRadius: 0, padding: 14, gap: 10 },
-  selectedLabel: { fontWeight: '600' },
+  introNotice: { padding: 12, gap: 6 },
+  noneOption: { borderWidth: 1, padding: 14, gap: 8 },
+  presetGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  presetCard: { flexGrow: 1, width: '48%', minWidth: 124, borderWidth: 1, padding: 10, gap: 8 },
+  posterFrame: { height: 164, alignItems: 'center', justifyContent: 'center', padding: 4 },
+  posterImage: { width: '100%', height: '100%' },
   pendingState: { padding: 12, gap: 6 },
   publicActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   publicAction: { flexGrow: 1, flexBasis: 118, minWidth: 110 },
