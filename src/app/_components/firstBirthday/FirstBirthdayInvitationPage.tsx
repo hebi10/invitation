@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 
 import { BackgroundMusic } from '@/components';
 import { resolveInvitationFeatures } from '@/lib/invitationProducts';
+import { resolvePublicInvitationIntro } from '@/lib/publicInvitationIntro';
+import PublicInvitationGifIntro from '@/components/sections/InvitationIntro/PublicInvitationGifIntro';
 import {
   clampInvitationMusicVolume,
   DEFAULT_INVITATION_MUSIC_VOLUME,
@@ -109,6 +111,11 @@ function FirstBirthdayInvitationPageBody(options: EventInvitationRouteOptions) {
     readyState.pageConfig.features
   );
   const isMediaPending = readyState.imagesLoading;
+  const introDecision = resolvePublicInvitationIntro(
+    readyState.pageConfig.introPresetId,
+    readyState.pageConfig.introStyle,
+    'first-birthday'
+  );
   const shouldRenderMusic =
     !isMediaPending &&
     features.showMusic &&
@@ -141,6 +148,14 @@ function FirstBirthdayInvitationPageBody(options: EventInvitationRouteOptions) {
         </div>
       ) : null}
       <ThemeRenderer state={readyState} />
+      {!isMediaPending && !readyState.isLoading && introDecision.kind === 'gif' ? (
+        <PublicInvitationGifIntro
+          key={`${readyState.pageConfig.slug}:${introDecision.preset.id}`}
+          slug={readyState.pageConfig.slug}
+          preset={introDecision.preset}
+          preview={options.queryScope === 'experience'}
+        />
+      ) : null}
       {shouldRenderMusic ? (
         <BackgroundMusic
           autoPlay
