@@ -1,8 +1,8 @@
-name: DEX-03 Invitation APK smoke
+name: DEX-03 Invitation baseline APK smoke
 
 on:
   push:
-    branches: [codex/dex03-invitation-smoke]
+    branches: [codex/dex03-invitation-baseline-smoke]
 
 permissions:
   contents: read
@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [baseline, optimized]
+        variant: [baseline]
     env:
       CANDIDATE_SHA: 89949938f7064c2d4cd574137c213a7fa7a978f4
     steps:
@@ -48,6 +48,9 @@ jobs:
           name: invitation-1.0.5-code30511-be0a976cd910-unsigned
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/invitation-baseline
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - name: Sign historical unsigned APK with disposable emulator key
         if: matrix.variant == 'baseline'
         run: |
