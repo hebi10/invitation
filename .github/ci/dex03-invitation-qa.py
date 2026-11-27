@@ -19,11 +19,14 @@ PACKAGE = 'kr.msgnote.mobileinvitation'
 
 def measure_bundle(bundle_path):
     markers = set()
+    has_record_field = False
     with zipfile.ZipFile(bundle_path) as archive:
         dex = [item for item in archive.infolist() if re.fullmatch(r'base/dex/classes[0-9]*\.dex', item.filename)]
         assert dex, f'No DEX in {bundle_path.name}'
         for item in dex:
-            for match in re.finditer(rb'~~(D8|R8)(\{[^\x00]{0,2048}\})', archive.read(item)):
+            dex_content = archive.read(item)
+            has_record_field = has_record_field or b'Lexpo/modules/kotlin/records/Field;\x00' in dex_content
+            for match in re.finditer(rb'~~(D8|R8)(\{[^\x00]{0,2048}\})', dex_content):
                 try:
                     info, _ = json.JSONDecoder().raw_decode(match[2].decode('utf-8', errors='ignore'))
                 except json.JSONDecodeError:
@@ -34,6 +37,7 @@ def measure_bundle(bundle_path):
             'dex_bytes': sum(item.file_size for item in dex),
             'dex_count': len(dex),
             'compiler_markers': sorted(markers),
+            'has_record_field_descriptor': has_record_field,
             'embedded_mapping': 'BUNDLE-METADATA/com.android.tools.build.obfuscation/proguard.map' in archive.namelist(),
             'bundle_bytes': bundle_path.stat().st_size,
             'bundle_sha256': hashlib.sha256(bundle_path.read_bytes()).hexdigest(),
@@ -48,6 +52,7 @@ def verify_metrics():
     candidate = measure_bundle(bundle)
     assert any(compiler == 'R8' for compiler, _ in candidate['compiler_markers']), candidate
     assert candidate['embedded_mapping'], 'The AAB has no R8 mapping'
+    assert candidate['has_record_field_descriptor'], 'Expo Record @Field was stripped or renamed'
     candidate['source_sha'] = os.environ['CANDIDATE_SHA']
     candidate['mapping_bytes'] = mapping.stat().st_size
     baseline_files = list((TEMP / 'invitation-baseline').rglob('*.aab'))
@@ -115,14 +120,15 @@ def capture(name):
     (EVIDENCE / f'{name}.png').write_bytes(adb('exec-out', 'screencap', '-p').stdout)
 
 
-def verify_creation_gate():
-    try:
-        find_node('고객 계정 로그인', timeout=8)
-    except AssertionError:
-        size = re.findall(rb'(\d+)x(\d+)', adb('shell', 'wm', 'size').stdout)
-        width, height = map(int, size[-1])
-        adb('shell', 'input', 'swipe', str(width // 2), str(height * 3 // 4), str(width // 2), str(height // 3), '500')
-        find_node('고객 계정 로그인')
+def reveal_label(value):
+    size = re.findall(rb'(\d+)x(\d+)', adb('shell', 'wm', 'size').stdout)
+    width, height = map(int, size[-1])
+    for _ in range(3):
+        try:
+            return find_node(value, timeout=6)
+        except AssertionError:
+            adb('shell', 'input', 'swipe', str(width // 2), str(height * 3 // 4), str(width // 2), str(height // 3), '500')
+    return find_node(value)
 
 
 def launch():
@@ -143,15 +149,15 @@ def smoke():
         print(adb('install', str(OUTPUT / 'invitation-dex03-qa.apk')).stdout.decode())
         launch()
         find_node('Invitation')
-        find_node('프리미엄 청첩장')
+        reveal_label('프리미엄 청첩장')
         capture('home')
         tap('만들기 탭으로 이동')
         find_node('청첩장 만들기')
-        verify_creation_gate()
+        reveal_label('고객 계정 로그인')
         capture('create')
         tap('마이페이지 탭으로 이동')
         find_node('마이페이지')
-        find_node('내 청첩장 확인')
+        reveal_label('내 청첩장 확인')
         capture('account')
         adb('shell', 'am', 'force-stop', PACKAGE)
         launch()
@@ -162,7 +168,14 @@ def smoke():
         (EVIDENCE / 'smoke.txt').write_text('Offline release APK smoke passed: home, creation sign-in gate, account, relaunch.\n', encoding='utf-8')
     except Exception:
         (EVIDENCE / 'failure.png').write_bytes(adb('exec-out', 'screencap', '-p', check=False).stdout)
+        try:
+            (EVIDENCE / 'failure.xml').write_bytes(dump_screen())
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            pass
         (EVIDENCE / 'failure-log.txt').write_bytes(adb('logcat', '-d', '-t', '350', check=False).stdout)
+        failure_pid = adb('shell', 'pidof', PACKAGE, check=False).stdout.decode().strip().split()
+        if failure_pid:
+            (EVIDENCE / 'app-log.txt').write_bytes(adb('logcat', '-d', '--pid', failure_pid[0], check=False).stdout)
         raise
     finally:
         (EVIDENCE / 'android-crash-log.txt').write_bytes(adb('logcat', '-d', '-b', 'crash', check=False).stdout)
