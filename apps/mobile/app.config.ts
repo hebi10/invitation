@@ -29,6 +29,7 @@ const config: ExpoConfig = {
     'expo-iap',
     'expo-secure-store',
     'expo-web-browser',
+      './plugins/with-android-release-optimization.mjs',
     [
       'expo-image-picker',
       {
