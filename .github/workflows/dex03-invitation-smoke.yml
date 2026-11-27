@@ -1,0 +1,85 @@
+name: DEX-03 Invitation APK smoke
+
+on:
+  push:
+    branches: [codex/dex03-invitation-smoke]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  invitation-apk-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    name: Invitation APK smoke (${{ matrix.variant }})
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [baseline, optimized]
+    env:
+      CANDIDATE_SHA: 89949938f7064c2d4cd574137c213a7fa7a978f4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        if: matrix.variant == 'optimized'
+        with:
+          run-id: 45960980135
+          name: invitation-6390540-dex-bytes-from-33660800
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/invitation-dex03
+      - name: Check candidate provenance
+        if: matrix.variant == 'optimized'
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          path = Path(os.environ['RUNNER_TEMP']) / 'invitation-dex03' / 'dex-metrics.json'
+          metrics = json.loads(path.read_text())
+          assert metrics['candidate']['source_sha'] == os.environ['CANDIDATE_SHA']
+          PY
+      - uses: actions/download-artifact@v4
+        if: matrix.variant == 'baseline'
+        with:
+          run-id: 45736405437
+          name: invitation-1.0.5-code30511-be0a976cd910-unsigned
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/invitation-baseline
+      - name: Sign historical unsigned APK with disposable emulator key
+        if: matrix.variant == 'baseline'
+        run: |
+          sdkmanager --install 'build-tools;36.0.0'
+          apksigner="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          mkdir -p "$RUNNER_TEMP/invitation-dex03"
+          keytool -genkeypair -keystore "$RUNNER_TEMP/dex03-baseline.jks" -storepass android -keypass android \
+            -alias dex03qa -keyalg RSA -keysize 2048 -validity 30 -dname 'CN=DEX 03 baseline emulator QA'
+          "$apksigner" sign --ks "$RUNNER_TEMP/dex03-baseline.jks" --ks-pass pass:android --key-pass pass:android \
+            --out "$RUNNER_TEMP/invitation-dex03/invitation-dex03-qa.apk" \
+            "$RUNNER_TEMP/invitation-baseline/invitation-1.0.5-code30511-be0a976cd910-unsigned.apk"
+          rm -f "$RUNNER_TEMP/dex03-baseline.jks"
+      - name: Enable runner KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Check offline launch, creation gate, account screen and relaunch
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 35
+          arch: x86_64
+          target: default
+          profile: pixel_7_pro
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: python3 .github/ci/dex03-invitation-qa.py smoke
+      - name: Preserve emulator evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invitation-dex03-emulator-evidence-${{ matrix.variant }}
+          path: ${{ runner.temp }}/invitation-dex03-smoke/
+          if-no-files-found: ignore
+          retention-days: 7
