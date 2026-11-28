@@ -195,6 +195,8 @@ export default function CreateScreen() {
       <AppScreen
         title="청첩장 만들기"
         subtitle="고객 계정 로그인 → Google Play 결제 → 청첩장 정보 입력"
+        compactHeader
+        contentContainerStyle={styles.compactContent}
       >
         {isWebPreview ? (
           <WebPreviewNotice
@@ -229,24 +231,23 @@ export default function CreateScreen() {
             );
           })}
         </View>
-        <SectionCard title="프리미엄 청첩장 · 단일 상품" badge={`${INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월 이용`} badgeTone="neutral">
+        <SectionCard compact title="프리미엄 청첩장 · 단일 상품" badge={`${INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월 이용`} badgeTone="neutral">
           <AppText variant="display" style={styles.productPrice}>{INVITATION_PREMIUM_PRICE_LABEL}</AppText>
           <View style={styles.summaryRow}>
             <AppText variant="muted">웨딩 디자인 5종 모두 제공</AppText>
             <AppText style={styles.summaryStrong}>추가 요금 없음</AppText>
           </View>
-          <AppText variant="caption" color={palette.textMuted}>
-            결제 후 청첩장 주소가 자동 생성됩니다. 신랑·신부 이름, 예식 정보와 사진은 결제 후 입력합니다.
-          </AppText>
         </SectionCard>
 
         {!customerSession ? (
           <SectionCard
+            compact
             title="고객 계정 로그인"
             description="로그인한 계정으로 청첩장을 구매하고 관리합니다."
           >
             <TextField
               label="이메일"
+              containerStyle={styles.loginField}
               value={email}
               onChangeText={setEmail}
               placeholder="이메일을 입력해 주세요"
@@ -256,6 +257,7 @@ export default function CreateScreen() {
             />
             <TextField
               label="비밀번호"
+              containerStyle={styles.loginField}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -352,6 +354,9 @@ export default function CreateScreen() {
 
         <View style={[styles.guidance, { backgroundColor: palette.surfaceMuted }]}>
           <AppText variant="caption" color={palette.textMuted}>
+            결제 후 청첩장 주소가 자동 생성됩니다. 신랑·신부 이름, 예식 정보와 사진은 결제 후 입력합니다.
+          </AppText>
+          <AppText variant="caption" color={palette.textMuted}>
             결제 완료 후 비공개 청첩장이 생성됩니다. 예식 정보·사진·음악 등은 마이페이지에서 7단계로 입력합니다.
           </AppText>
         </View>
@@ -384,11 +389,13 @@ export default function CreateScreen() {
 
 const styles = StyleSheet.create({
   loading: { alignItems: 'center', gap: 10, paddingVertical: 12 },
-  progressRow: { flexDirection: 'row', gap: 8 },
+  compactContent: { gap: 12 },
+  loginField: { gap: 4 },
+  progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   progressStep: {
     flex: 1,
     minWidth: 0,
-    minHeight: 42,
+    minHeight: 38,
     borderWidth: 1,
     borderRadius: 0,
     justifyContent: 'center',
@@ -406,6 +413,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   summaryStrong: { fontWeight: '700' },
-  guidance: { padding: 14 },
+  guidance: { padding: 12, gap: 4 },
   warning: { padding: 12, gap: 6 },
 });
