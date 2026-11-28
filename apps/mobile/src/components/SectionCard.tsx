@@ -19,6 +19,7 @@ type SectionCardProps = PropsWithChildren<{
   badgeTone?: 'accent' | 'success' | 'notice' | 'neutral';
   onPress?: () => void;
   variant?: 'default' | 'hero' | 'emphasis';
+  compact?: boolean;
 }>;
 
 export function SectionCard({
@@ -28,6 +29,7 @@ export function SectionCard({
   badgeTone = 'accent',
   onPress,
   variant = 'default',
+  compact = false,
   children,
 }: SectionCardProps) {
   const { palette, fontScale } = useVisualPreferences();
@@ -41,6 +43,7 @@ export function SectionCard({
     styles.card,
     isHero ? styles.heroCard : null,
     isEmphasis ? styles.emphasisCard : null,
+    compact ? styles.compactCard : null,
     {
       backgroundColor: isHero
         ? palette.surfaceMuted
@@ -114,7 +117,7 @@ export function SectionCard({
           </View>
         ) : null}
       </View>
-      <View style={styles.body}>{children}</View>
+      <View style={[styles.body, compact ? styles.compactBody : null]}>{children}</View>
     </>
   );
 
@@ -140,6 +143,8 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 16,
   },
+  compactCard: { padding: 12, gap: 8 },
+  compactBody: { gap: 8 },
   heroCard: {
     padding: 16,
     gap: 16,

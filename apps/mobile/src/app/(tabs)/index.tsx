@@ -34,11 +34,17 @@ export default function MyInvitationsScreen() {
   }
 
   return (
-    <AppScreen title="Invitation" subtitle="웨딩 디자인 5종 · 모바일 청첩장 만들기">
+    <AppScreen
+      title="Invitation"
+      subtitle="웨딩 디자인 5종 · 모바일 청첩장 만들기"
+      compactHeader
+      contentContainerStyle={styles.compactContent}
+    >
       {isExpoWebPreview ? <WebPreviewNotice /> : null}
       <DraftInvitationsSection />
       <WeddingIntroHero />
       <SectionCard
+        compact
         title="프리미엄 청첩장"
         description={`생성일부터 ${INVITATION_INITIAL_DISPLAY_PERIOD_MONTHS}개월 · 웨딩 디자인 5종 모두 포함`}
       >
@@ -62,10 +68,13 @@ export default function MyInvitationsScreen() {
         </AppText>
       </SectionCard>
       <SectionCard
+        compact
         title="웨딩 디자인 살펴보기"
-        description="신민제·김현지 샘플 청첩장으로 디자인별 공개 미리보기를 확인할 수 있습니다."
       >
         <ThemePreviewGallery />
+        <AppText variant="muted">
+          신민제·김현지 샘플 청첩장으로 디자인별 공개 미리보기를 확인할 수 있습니다.
+        </AppText>
       </SectionCard>
       <ActionButton variant="secondary" fullWidth onPress={() => router.push('/guide')}>
         마이페이지에서 내 청첩장 관리
@@ -76,6 +85,7 @@ export default function MyInvitationsScreen() {
 
 const styles = StyleSheet.create({
   loading: { alignItems: 'center', gap: 12, paddingVertical: 32 },
+  compactContent: { gap: 11 },
   priceRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',

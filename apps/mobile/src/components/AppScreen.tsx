@@ -19,6 +19,7 @@ type AppScreenProps = PropsWithChildren<{
   title: string;
   subtitle?: string;
   headerRight?: ReactNode;
+  compactHeader?: boolean;
   contentContainerStyle?: StyleProp<ViewStyle>;
   scrollRef?: RefObject<ScrollView | null>;
 }>;
@@ -27,6 +28,7 @@ export function AppScreen({
   title,
   subtitle,
   headerRight,
+  compactHeader = false,
   contentContainerStyle,
   scrollRef,
   children,
@@ -45,7 +47,7 @@ export function AppScreen({
         contentContainerStyle={[
           styles.content,
           {
-            paddingTop: insets.top + APP_SPACING.lg,
+            paddingTop: insets.top + (compactHeader ? APP_SPACING.xs : APP_SPACING.lg),
             paddingBottom: insets.bottom + APP_SPACING.xl,
           },
           contentContainerStyle,
@@ -54,8 +56,8 @@ export function AppScreen({
         keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <View style={styles.headerCopy}>
+        <View style={[styles.header, compactHeader && styles.compactHeader]}>
+          <View style={[styles.headerCopy, compactHeader && styles.compactHeaderCopy]}>
             <Text accessibilityRole="header" style={[{ color: palette.text }, getScaledTypography('screenTitle', fontScale)]}>
               {title}
             </Text>
@@ -100,4 +102,6 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 10,
   },
+  compactHeader: { paddingBottom: 0 },
+  compactHeaderCopy: { gap: 4 },
 });

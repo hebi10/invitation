@@ -13,7 +13,7 @@ export function WeddingIntroHero() {
       <View style={styles.previews}>
         <Image
           source={themePreviewImages.simple}
-          style={[styles.preview, { backgroundColor: palette.surfaceMuted }]}
+          style={[styles.preview, styles.portraitPreview, { backgroundColor: palette.surfaceMuted }]}
           contentFit="cover"
           contentPosition="center"
           alt="신민제·김현지 기본형 청첩장 공개 샘플 이미지"
@@ -48,9 +48,10 @@ const styles = StyleSheet.create({
     padding: 0,
     gap: 0,
   },
-  copy: { gap: 8, padding: 16 },
+  copy: { gap: 4, padding: 12 },
   eyebrow: { fontWeight: '600', letterSpacing: 0.6 },
   title: { fontWeight: '700' },
-  previews: { flexDirection: 'row', gap: 0 },
-  preview: { flex: 1, minWidth: 0, aspectRatio: 3 / 4 },
+  previews: { flexDirection: 'row', aspectRatio: 1.83 },
+  preview: { flex: 39, minWidth: 0 },
+  portraitPreview: { flex: 61 },
 });
